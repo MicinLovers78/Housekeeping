@@ -1,4 +1,4 @@
-// ================================================================
+ // ================================================================
 // AMERTA LOKA RESORT — Housekeeping & Inventori Module
 // Vue 3 (CDN Global Build) | Design: Earthy Natural
 // Primary #6B704C | Secondary #B8977E | Tertiary #3E2A1F
