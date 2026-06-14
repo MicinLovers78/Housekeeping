@@ -1,8 +1,8 @@
- // ================================================================
+// ================================================================
 // AMERTA LOKA RESORT — Housekeeping & Inventori Module
 // Vue 3 (CDN Global Build) | Design: Earthy Natural
 // Primary #6B704C | Secondary #B8977E | Tertiary #3E2A1F
-// ================================================================ 
+// ================================================================
 
 const { createApp, ref, reactive, computed, onMounted, nextTick, watch } = Vue;
 
@@ -189,6 +189,20 @@ const MOCK = {
     { id: 6, room: '101', facility: 'Water Pump',usageDays: 45, maxDays: 120,status: 'normal',   icon: 'water' },
   ],
 
+  // Lost & Found data
+  lostFound: [
+    { id: 1, kode_lf: 'LF001', room_number: '301', item_name: 'Jam Tangan Rolex', description: 'Jam tangan mewah warna perak, ditemukan di atas meja nakas', found_by: 4, found_date: '2026-06-14', storage_location: 'Locker A-01', photo: null, status: 'STORED', claimed_by: null, claim_date: null },
+    { id: 2, kode_lf: 'LF002', room_number: '202', item_name: 'Charger iPhone', description: 'Charger iPhone warna putih dengan kabel USB-C', found_by: 5, found_date: '2026-06-13', storage_location: 'Locker A-02', photo: null, status: 'CLAIMED', claimed_by: 'Budi Santoso', claim_date: '2026-06-14' },
+    { id: 3, kode_lf: 'LF003', room_number: '402', item_name: 'Kacamata Rayban', description: 'Kacamata hitam merk Rayban, frame logam', found_by: 6, found_date: '2026-06-13', storage_location: 'Locker B-01', photo: null, status: 'STORED', claimed_by: null, claim_date: null },
+    { id: 4, kode_lf: 'LF004', room_number: '105', item_name: 'Dompet Kulit', description: 'Dompet kulit coklat berisi beberapa kartu', found_by: 1, found_date: '2026-06-12', storage_location: 'Locker A-03', photo: null, status: 'CLOSED', claimed_by: 'Dewi Rahayu', claim_date: '2026-06-13' },
+    { id: 5, kode_lf: 'LF005', room_number: '303', item_name: 'Buku Passport', description: 'Passport WNA berwarna hijau, nama Mr. James Wilson', found_by: 1, found_date: '2026-06-12', storage_location: 'Locker C-01', photo: null, status: 'FOUND', claimed_by: null, claim_date: null },
+    { id: 6, kode_lf: 'LF006', room_number: '201', item_name: 'Laptop Charger', description: 'Charger laptop merek Asus 65W, kabel hitam', found_by: 6, found_date: '2026-06-11', storage_location: 'Locker A-04', photo: null, status: 'STORED', claimed_by: null, claim_date: null },
+    { id: 7, kode_lf: 'LF007', room_number: '102', item_name: 'Gelang Emas', description: 'Gelang emas 24 karat, tidak ada nama/inisial', found_by: 4, found_date: '2026-06-11', storage_location: 'Locker C-02', photo: null, status: 'STORED', claimed_by: null, claim_date: null },
+    { id: 8, kode_lf: 'LF008', room_number: '501', item_name: 'Kamera DSLR', description: 'Kamera Canon EOS 5D dengan lensa standar 18-55mm', found_by: 3, found_date: '2026-06-10', storage_location: 'Locker B-02', photo: null, status: 'CLAIMED', claimed_by: 'Ahmad Rizky', claim_date: '2026-06-12' },
+    { id: 9, kode_lf: 'LF009', room_number: '204', item_name: 'Sepatu Nike', description: 'Sepatu olahraga Nike warna putih ukuran 42', found_by: 6, found_date: '2026-06-10', storage_location: 'Locker D-01', photo: null, status: 'CLOSED', claimed_by: 'Siti Aminah', claim_date: '2026-06-11' },
+    { id: 10, kode_lf: 'LF010', room_number: '302', item_name: 'Tablet Samsung', description: 'Samsung Galaxy Tab S8, warna hitam, tanpa casing', found_by: 1, found_date: '2026-06-09', storage_location: 'Locker C-03', photo: null, status: 'FOUND', claimed_by: null, claim_date: null },
+  ],
+
   // Aktivitas log
   activities: [
     { id: 1, text: 'Kamar 402 – Villa Suite selesai dibersihkan oleh Putu Alex', time: '08:42', icon: 'check_circle', color: 'var(--color-success)' },
@@ -250,6 +264,11 @@ const SidebarComp = {
           <span class="material-icons-round">build_circle</span>
           <span class="sidebar-item-label">Predictive Maintenance</span>
           <span class="sidebar-badge" style="background:var(--color-danger)">2</span>
+        </div>
+        <div class="sidebar-item" :class="{ active: currentPage === 'lostFound' }" @click="$emit('navigate','lostfound')">
+          <span class="material-icons-round">manage_search</span>
+          <span class="sidebar-item-label">Lost &amp; Found</span>
+          <span class="sidebar-badge" style="background:var(--color-warning)">3</span>
         </div>
 
         <div class="sidebar-section"><div class="sidebar-section-label">Modul Lain</div></div>
@@ -1716,10 +1735,487 @@ const PageMaintenance = {
   }
 };
 
+// ── PAGE: Lost & Found ────────────────────────────────────────
+const PageLostFound = {
+  name: 'PageLostFound',
+  props: ['mockData', 'api'],
+  emits: ['showToast'],
+  template: `
+    <div>
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Lost &amp; Found 🔍</h1>
+          <p class="page-subtitle">Manajemen barang temuan tamu — Amerta Loka Resort</p>
+        </div>
+        <div class="page-actions">
+          <button class="btn btn-outlined" @click="$emit('showToast','Laporan Lost & Found diunduh','success')">
+            <span class="material-icons-round">download</span> Laporan
+          </button>
+          <button class="btn btn-primary" @click="openAddModal">
+            <span class="material-icons-round">add_circle</span> Tambah Temuan
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stat-grid mb-5">
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-primary"><span class="material-icons-round">inventory_2</span></div>
+          <div class="stat-value">{{ items.length }}</div>
+          <div class="stat-label">Total Temuan</div>
+          <div class="stat-change"><span class="material-icons-round">calendar_today</span>Semua waktu</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-warning"><span class="material-icons-round">pending_actions</span></div>
+          <div class="stat-value">{{ unclaimed }}</div>
+          <div class="stat-label">Belum Diklaim</div>
+          <div class="stat-change down"><span class="material-icons-round">watch_later</span>Menunggu pemilik</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-success"><span class="material-icons-round">check_circle</span></div>
+          <div class="stat-value">{{ claimed }}</div>
+          <div class="stat-label">Sudah Diklaim</div>
+          <div class="stat-change up"><span class="material-icons-round">arrow_upward</span>Berhasil dikembalikan</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon stat-icon-danger"><span class="material-icons-round">notification_important</span></div>
+          <div class="stat-value">{{ needsVerification }}</div>
+          <div class="stat-label">Menunggu Verifikasi</div>
+          <div class="stat-change"><span class="material-icons-round">supervisor_account</span>Perlu supervisor</div>
+        </div>
+      </div>
+
+      <!-- Workflow Banner -->
+      <div class="card mb-5" style="background: linear-gradient(135deg, rgba(107,112,76,0.08) 0%, rgba(184,151,126,0.08) 100%); border: 1px solid rgba(107,112,76,0.2)">
+        <div class="card-header" style="margin-bottom:12px">
+          <div class="card-title">Alur Kerja Lost &amp; Found</div>
+        </div>
+        <div class="flex items-center gap-2 wrap" style="font-size:13px">
+          <div v-for="(step, i) in workflow" :key="i" class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-3 py-2 rounded-lg" :style="{ background: step.bg, color: step.color, fontWeight: 600 }">
+              <span class="material-icons-round" style="font-size:16px">{{ step.icon }}</span>
+              {{ step.label }}
+            </div>
+            <span v-if="i < workflow.length-1" class="material-icons-round text-muted" style="font-size:18px">arrow_forward</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter & Search -->
+      <div class="flex gap-3 mb-4 wrap">
+        <div class="flex gap-2">
+          <button v-for="f in statusFilters" :key="f.val" class="btn btn-sm" :class="filterStatus===f.val?'btn-primary':'btn-secondary'" @click="filterStatus=f.val">
+            <span class="material-icons-round" style="font-size:14px">{{ f.icon }}</span> {{ f.label }}
+            <span v-if="f.count" class="badge badge-neutral ml-1" style="margin-left:6px;font-size:10px">{{ f.count }}</span>
+          </button>
+        </div>
+        <div class="ml-auto flex gap-2 items-center">
+          <div class="search-field" style="background:var(--surface-card)">
+            <span class="material-icons-round">search</span>
+            <input type="text" placeholder="Cari barang, kamar..." v-model="searchQ" style="border:none;outline:none;background:transparent;font-family:inherit;font-size:13px;width:180px">
+          </div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Kode</th>
+                <th>Nama Barang</th>
+                <th>Kamar</th>
+                <th>Ditemukan Oleh</th>
+                <th>Tgl Temuan</th>
+                <th>Lokasi Simpan</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in filteredItems" :key="item.id" @click="openDetail(item)" style="cursor:pointer">
+                <td><span class="font-semibold" style="color:var(--color-primary)">{{ item.kode_lf }}</span></td>
+                <td>
+                  <div class="flex items-center gap-2">
+                    <div class="lf-item-icon">
+                      <span class="material-icons-round" style="font-size:16px;color:var(--color-secondary)">{{ getItemIcon(item.item_name) }}</span>
+                    </div>
+                    <div>
+                      <div class="font-semibold">{{ item.item_name }}</div>
+                      <div class="text-xs text-muted" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ item.description }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-neutral">Kamar {{ item.room_number }}</span></td>
+                <td>
+                  <div class="flex items-center gap-2" v-if="getStaff(item.found_by)">
+                    <div class="room-assignee-dot" style="width:26px;height:26px;font-size:11px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0" :style="{ background: getStaff(item.found_by).color }">{{ getStaff(item.found_by).initial }}</div>
+                    <span class="text-sm">{{ getStaff(item.found_by).name.split(' ').slice(0,2).join(' ') }}</span>
+                  </div>
+                </td>
+                <td class="text-sm text-muted">{{ formatDate(item.found_date) }}</td>
+                <td>
+                  <div class="flex items-center gap-1 text-sm">
+                    <span class="material-icons-round" style="font-size:14px;color:var(--color-primary)">lock</span>
+                    {{ item.storage_location }}
+                  </div>
+                </td>
+                <td>
+                  <span class="badge" :class="lfStatusBadge[item.status]">
+                    <span class="material-icons-round" style="font-size:12px;vertical-align:middle;margin-right:3px">{{ lfStatusIcon[item.status] }}</span>
+                    {{ lfStatusLabel[item.status] }}
+                  </span>
+                </td>
+                <td>
+                  <div class="flex gap-1" @click.stop>
+                    <button v-if="item.status==='FOUND'" class="btn btn-outlined btn-sm" @click.stop="advanceStatus(item,'STORED')">
+                      <span class="material-icons-round">verified</span> Verifikasi
+                    </button>
+                    <button v-if="item.status==='STORED'" class="btn btn-outlined btn-sm" style="border-color:var(--color-success);color:var(--color-success)" @click.stop="openClaimModal(item)">
+                      <span class="material-icons-round">how_to_reg</span> Klaim
+                    </button>
+                    <button v-if="item.status==='CLAIMED'" class="btn btn-outlined btn-sm" style="border-color:var(--color-info);color:var(--color-info)" @click.stop="advanceStatus(item,'CLOSED')">
+                      <span class="material-icons-round">task_alt</span> Tutup
+                    </button>
+                    <button class="btn btn-ghost btn-sm" @click.stop="openDetail(item)">
+                      <span class="material-icons-round">visibility</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div v-if="filteredItems.length===0" style="text-align:center;padding:48px;color:var(--text-muted)">
+            <span class="material-icons-round" style="font-size:40px;opacity:0.3">search_off</span>
+            <div class="mt-3">Tidak ada barang ditemukan</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Modal -->
+      <transition name="scale">
+        <div class="modal-backdrop" v-if="addModal" @click.self="addModal=false">
+          <div class="modal" style="max-width:600px">
+            <div class="modal-header">
+              <div class="modal-title">
+                <span class="material-icons-round" style="vertical-align:middle;margin-right:8px;color:var(--color-primary)">add_circle</span>
+                Input Barang Temuan
+              </div>
+              <button class="icon-btn" @click="addModal=false"><span class="material-icons-round">close</span></button>
+            </div>
+            <div class="modal-body">
+              <div class="grid-2 gap-4">
+                <div class="form-group">
+                  <label class="form-label">ID Temuan *</label>
+                  <input class="form-input" v-model="newItem.kode_lf" placeholder="LF011" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Nomor Kamar *</label>
+                  <select class="form-select" v-model="newItem.room_number">
+                    <option value="">Pilih kamar</option>
+                    <option v-for="r in mockData.rooms" :key="r.id" :value="r.id">{{ r.id }} – {{ r.type }}</option>
+                  </select>
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                  <label class="form-label">Nama Barang *</label>
+                  <input class="form-input" v-model="newItem.item_name" placeholder="Contoh: Jam Tangan Rolex" />
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                  <label class="form-label">Deskripsi Barang</label>
+                  <textarea class="form-textarea" v-model="newItem.description" placeholder="Warna, ukuran, merek, ciri khusus..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Ditemukan Oleh *</label>
+                  <select class="form-select" v-model="newItem.found_by">
+                    <option value="">Pilih staf</option>
+                    <option v-for="s in mockData.staff" :key="s.id" :value="s.id">{{ s.name }}</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tanggal Temuan</label>
+                  <input class="form-input" type="date" v-model="newItem.found_date" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Lokasi Simpan</label>
+                  <input class="form-input" v-model="newItem.storage_location" placeholder="Contoh: Locker A-01" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Foto Barang</label>
+                  <div class="form-input" style="cursor:pointer;color:var(--text-muted);display:flex;align-items:center;gap:8px" @click="$emit('showToast','Upload foto (simulasi)','info')">
+                    <span class="material-icons-round" style="font-size:18px">photo_camera</span>
+                    Upload Foto Barang
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" @click="addModal=false">Batal</button>
+              <button class="btn btn-primary" @click="saveItem">
+                <span class="material-icons-round">save</span> Simpan Temuan
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Claim Modal -->
+      <transition name="scale">
+        <div class="modal-backdrop" v-if="claimModal && claimTarget" @click.self="claimModal=false">
+          <div class="modal" style="max-width:480px">
+            <div class="modal-header">
+              <div class="modal-title">
+                <span class="material-icons-round" style="vertical-align:middle;margin-right:8px;color:var(--color-success)">how_to_reg</span>
+                Proses Klaim Barang
+              </div>
+              <button class="icon-btn" @click="claimModal=false"><span class="material-icons-round">close</span></button>
+            </div>
+            <div class="modal-body">
+              <div class="card mb-4" style="background:var(--surface-bg)">
+                <div class="text-sm text-muted mb-1">Barang</div>
+                <div class="font-semibold">{{ claimTarget.item_name }}</div>
+                <div class="text-sm text-muted">{{ claimTarget.kode_lf }} · Kamar {{ claimTarget.room_number }}</div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Nama Pengklaim *</label>
+                <input class="form-input" v-model="claimName" placeholder="Nama lengkap tamu/pemilik" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Tanggal Klaim</label>
+                <input class="form-input" type="date" v-model="claimDate" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Bukti Identitas</label>
+                <div class="form-input" style="cursor:pointer;color:var(--text-muted);display:flex;align-items:center;gap:8px" @click="$emit('showToast','Upload KTP/Passport (simulasi)','info')">
+                  <span class="material-icons-round" style="font-size:18px">badge</span>
+                  Upload KTP / Passport
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" @click="claimModal=false">Batal</button>
+              <button class="btn btn-primary" style="background:var(--color-success)" @click="processClaim">
+                <span class="material-icons-round">check_circle</span> Konfirmasi Klaim
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Detail Drawer -->
+      <transition name="drawer">
+        <div class="side-drawer" v-if="detailDrawer && detailItem" style="width:380px">
+          <div class="flex items-center justify-between mb-6">
+            <div style="font-size:18px;font-weight:800">Detail Barang Temuan</div>
+            <button class="icon-btn" @click="detailDrawer=false"><span class="material-icons-round">close</span></button>
+          </div>
+
+          <div class="flex items-center gap-3 mb-5">
+            <div style="width:56px;height:56px;border-radius:16px;background:rgba(184,151,126,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span class="material-icons-round" style="font-size:28px;color:var(--color-secondary)">{{ getItemIcon(detailItem.item_name) }}</span>
+            </div>
+            <div>
+              <div style="font-size:17px;font-weight:700">{{ detailItem.item_name }}</div>
+              <div class="text-muted text-sm">{{ detailItem.kode_lf }}</div>
+              <span class="badge mt-1" :class="lfStatusBadge[detailItem.status]">{{ lfStatusLabel[detailItem.status] }}</span>
+            </div>
+          </div>
+
+          <!-- Status Timeline -->
+          <div class="card mb-4" style="background:var(--surface-bg)">
+            <div class="card-title mb-3">Status Workflow</div>
+            <div class="flex gap-2 items-center" style="font-size:12px">
+              <div v-for="(s,i) in ['FOUND','STORED','CLAIMED','CLOSED']" :key="s" class="flex items-center gap-1">
+                <div class="flex flex-col items-center gap-1">
+                  <div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;transition:all .2s"
+                    :style="{ background: isStatusReached(detailItem.status, s) ? getStatusColor(s) : 'rgba(154,153,120,0.2)', color: isStatusReached(detailItem.status, s) ? '#fff' : 'var(--text-muted)' }">
+                    <span class="material-icons-round" style="font-size:14px">{{ lfStatusIcon[s] }}</span>
+                  </div>
+                  <div :style="{ color: isStatusReached(detailItem.status, s) ? getStatusColor(s) : 'var(--text-muted)', fontWeight: detailItem.status===s?'700':'400' }">
+                    {{ lfStatusLabel[s] }}
+                  </div>
+                </div>
+                <div v-if="i<3" style="width:24px;height:2px;background:rgba(154,153,120,0.3);margin-bottom:16px;flex-shrink:0"
+                  :style="{ background: isStatusReached(detailItem.status, ['FOUND','STORED','CLAIMED','CLOSED'][i+1]) ? getStatusColor(detailItem.status) : 'rgba(154,153,120,0.2)' }"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card mb-3" style="background:var(--surface-bg)">
+            <div class="card-title mb-3">Info Barang</div>
+            <div class="flex flex-col gap-2 text-sm">
+              <div class="flex justify-between"><span class="text-muted">Kamar</span><span class="font-semibold">{{ detailItem.room_number }}</span></div>
+              <div class="flex justify-between"><span class="text-muted">Tanggal Temuan</span><span class="font-semibold">{{ formatDate(detailItem.found_date) }}</span></div>
+              <div class="flex justify-between"><span class="text-muted">Lokasi Simpan</span><span class="font-semibold">{{ detailItem.storage_location }}</span></div>
+              <div class="flex justify-between" v-if="getStaff(detailItem.found_by)"><span class="text-muted">Ditemukan Oleh</span><span class="font-semibold">{{ getStaff(detailItem.found_by).name.split(' ').slice(0,2).join(' ') }}</span></div>
+            </div>
+          </div>
+
+          <div class="card mb-3" style="background:var(--surface-bg)" v-if="detailItem.description">
+            <div class="card-title mb-2">Deskripsi</div>
+            <div class="text-sm text-muted">{{ detailItem.description }}</div>
+          </div>
+
+          <div class="card mb-5" style="background:var(--surface-bg)" v-if="detailItem.claimed_by">
+            <div class="card-title mb-3">Info Klaim</div>
+            <div class="flex flex-col gap-2 text-sm">
+              <div class="flex justify-between"><span class="text-muted">Diklaim Oleh</span><span class="font-semibold">{{ detailItem.claimed_by }}</span></div>
+              <div class="flex justify-between"><span class="text-muted">Tanggal Klaim</span><span class="font-semibold">{{ formatDate(detailItem.claim_date) }}</span></div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <button v-if="detailItem.status==='FOUND'" class="btn btn-primary w-full" @click="advanceStatus(detailItem,'STORED'); detailDrawer=false">
+              <span class="material-icons-round">verified</span> Verifikasi & Simpan
+            </button>
+            <button v-if="detailItem.status==='STORED'" class="btn w-full" style="background:var(--color-success);color:#fff" @click="detailDrawer=false; openClaimModal(detailItem)">
+              <span class="material-icons-round">how_to_reg</span> Proses Klaim
+            </button>
+            <button v-if="detailItem.status==='CLAIMED'" class="btn w-full" style="background:var(--color-info);color:#fff" @click="advanceStatus(detailItem,'CLOSED'); detailDrawer=false">
+              <span class="material-icons-round">task_alt</span> Tutup Kasus
+            </button>
+            <button class="btn btn-ghost w-full" @click="detailDrawer=false">Tutup</button>
+          </div>
+        </div>
+      </transition>
+    </div>
+  `,
+  setup(props, { emit }) {
+    const items = ref([...props.mockData.lostFound]);
+    const addModal = ref(false);
+    const claimModal = ref(false);
+    const claimTarget = ref(null);
+    const claimName = ref('');
+    const claimDate = ref('2026-06-14');
+    const detailDrawer = ref(false);
+    const detailItem = ref(null);
+    const filterStatus = ref('');
+    const searchQ = ref('');
+
+    const lfStatusLabel = { FOUND: 'Ditemukan', STORED: 'Disimpan', CLAIMED: 'Diklaim', CLOSED: 'Selesai' };
+    const lfStatusBadge = { FOUND: 'badge-warning', STORED: 'badge-info', CLAIMED: 'badge-success', CLOSED: 'badge-neutral' };
+    const lfStatusIcon  = { FOUND: 'search', STORED: 'lock', CLAIMED: 'how_to_reg', CLOSED: 'task_alt' };
+    const statusOrder = ['FOUND', 'STORED', 'CLAIMED', 'CLOSED'];
+
+    const workflow = [
+      { label: 'Housekeeping Temukan', icon: 'cleaning_services', bg: 'rgba(107,112,76,0.12)', color: 'var(--color-primary)' },
+      { label: 'Input Sistem', icon: 'edit_note', bg: 'rgba(74,110,138,0.12)', color: 'var(--color-info)' },
+      { label: 'Supervisor Verifikasi', icon: 'verified_user', bg: 'rgba(196,131,42,0.12)', color: 'var(--color-warning)' },
+      { label: 'Barang Disimpan', icon: 'lock', bg: 'rgba(62,42,31,0.08)', color: 'var(--color-secondary)' },
+      { label: 'Tamu Klaim', icon: 'how_to_reg', bg: 'rgba(74,124,89,0.12)', color: 'var(--color-success)' },
+      { label: 'Kasus Ditutup', icon: 'task_alt', bg: 'rgba(154,153,120,0.12)', color: 'var(--text-muted)' },
+    ];
+
+    const statusFilters = computed(() => [
+      { val: '', label: 'Semua', icon: 'list', count: items.value.length },
+      { val: 'FOUND', label: 'Ditemukan', icon: 'search', count: items.value.filter(i=>i.status==='FOUND').length },
+      { val: 'STORED', label: 'Disimpan', icon: 'lock', count: items.value.filter(i=>i.status==='STORED').length },
+      { val: 'CLAIMED', label: 'Diklaim', icon: 'how_to_reg', count: items.value.filter(i=>i.status==='CLAIMED').length },
+      { val: 'CLOSED', label: 'Selesai', icon: 'task_alt', count: items.value.filter(i=>i.status==='CLOSED').length },
+    ]);
+
+    const unclaimed = computed(() => items.value.filter(i => i.status === 'FOUND' || i.status === 'STORED').length);
+    const claimed   = computed(() => items.value.filter(i => i.status === 'CLAIMED').length);
+    const needsVerification = computed(() => items.value.filter(i => i.status === 'FOUND').length);
+
+    const filteredItems = computed(() => {
+      let list = items.value;
+      if (filterStatus.value) list = list.filter(i => i.status === filterStatus.value);
+      if (searchQ.value) {
+        const q = searchQ.value.toLowerCase();
+        list = list.filter(i => i.item_name.toLowerCase().includes(q) || i.room_number.includes(q) || i.kode_lf.toLowerCase().includes(q));
+      }
+      return list;
+    });
+
+    const newItem = reactive({
+      kode_lf: '', room_number: '', item_name: '', description: '',
+      found_by: '', found_date: '2026-06-14', storage_location: '', photo: null
+    });
+
+    function getStaff(id) { return props.mockData.staff.find(s => s.id === id); }
+    function formatDate(d) {
+      if (!d) return '—';
+      const [y, m, day] = d.split('-');
+      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      return `${day} ${months[+m-1]} ${y}`;
+    }
+    function getItemIcon(name) {
+      const n = (name || '').toLowerCase();
+      if (n.includes('jam') || n.includes('watch')) return 'watch';
+      if (n.includes('kamera') || n.includes('camera')) return 'photo_camera';
+      if (n.includes('laptop') || n.includes('charger')) return 'laptop';
+      if (n.includes('tablet') || n.includes('ipad')) return 'tablet';
+      if (n.includes('hp') || n.includes('phone') || n.includes('iphone')) return 'smartphone';
+      if (n.includes('kacamata') || n.includes('glasses')) return 'visibility';
+      if (n.includes('dompet') || n.includes('wallet')) return 'account_balance_wallet';
+      if (n.includes('gelang') || n.includes('cincin') || n.includes('kalung')) return 'diamond';
+      if (n.includes('sepatu') || n.includes('sandal')) return 'directions_walk';
+      if (n.includes('baju') || n.includes('buku')) return 'menu_book';
+      if (n.includes('passport') || n.includes('ktp')) return 'badge';
+      return 'inventory_2';
+    }
+    function isStatusReached(current, check) {
+      return statusOrder.indexOf(current) >= statusOrder.indexOf(check);
+    }
+    function getStatusColor(s) {
+      const map = { FOUND:'var(--color-warning)', STORED:'var(--color-info)', CLAIMED:'var(--color-success)', CLOSED:'var(--text-muted)' };
+      return map[s] || 'var(--color-primary)';
+    }
+
+    function openAddModal() {
+      const nextId = Math.max(...items.value.map(i=>i.id)) + 1;
+      Object.assign(newItem, { kode_lf: `LF${String(nextId).padStart(3,'0')}`, room_number: '', item_name: '', description: '', found_by: '', found_date: '2026-06-14', storage_location: '', photo: null });
+      addModal.value = true;
+    }
+    function saveItem() {
+      if (!newItem.item_name || !newItem.room_number || !newItem.found_by) {
+        emit('showToast', 'Lengkapi nama barang, kamar, dan penemuan', 'error'); return;
+      }
+      const nextId = Math.max(...items.value.map(i=>i.id)) + 1;
+      items.value.unshift({ id: nextId, ...JSON.parse(JSON.stringify(newItem)), status: 'FOUND', claimed_by: null, claim_date: null });
+      emit('showToast', `Barang "${newItem.item_name}" berhasil dicatat sebagai ${newItem.kode_lf}`, 'success');
+      addModal.value = false;
+    }
+    function openClaimModal(item) {
+      claimTarget.value = item;
+      claimName.value = '';
+      claimDate.value = '2026-06-14';
+      claimModal.value = true;
+    }
+    function processClaim() {
+      if (!claimName.value) { emit('showToast', 'Masukkan nama pengklaim', 'error'); return; }
+      claimTarget.value.status = 'CLAIMED';
+      claimTarget.value.claimed_by = claimName.value;
+      claimTarget.value.claim_date = claimDate.value;
+      emit('showToast', `Barang "${claimTarget.value.item_name}" berhasil diklaim oleh ${claimName.value}`, 'success');
+      claimModal.value = false;
+    }
+    function advanceStatus(item, nextStatus) {
+      item.status = nextStatus;
+      const msgs = { STORED: `Barang "${item.item_name}" berhasil diverifikasi & disimpan`, CLOSED: `Kasus ${item.kode_lf} ditutup` };
+      emit('showToast', msgs[nextStatus] || 'Status diperbarui', 'success');
+    }
+    function openDetail(item) {
+      detailItem.value = item;
+      detailDrawer.value = true;
+    }
+
+    return {
+      items, addModal, claimModal, claimTarget, claimName, claimDate, detailDrawer, detailItem,
+      filterStatus, searchQ, newItem, workflow,
+      unclaimed, claimed, needsVerification, filteredItems, statusFilters,
+      lfStatusLabel, lfStatusBadge, lfStatusIcon,
+      getStaff, formatDate, getItemIcon, isStatusReached, getStatusColor,
+      openAddModal, saveItem, openClaimModal, processClaim, advanceStatus, openDetail
+    };
+  }
+};
+
 // ── ROOT APP ──────────────────────────────────────────────────
 const App = {
   name: 'App',
-  components: { SidebarComp, TopbarComp, PageDashboard, PageHousekeeping, PageInventory, PageStaff, PageMaintenance },
+  components: { SidebarComp, TopbarComp, PageDashboard, PageHousekeeping, PageInventory, PageStaff, PageMaintenance, PageLostFound },
   template: `
     <div style="display:flex;height:100vh;overflow:hidden">
       <sidebar-comp
@@ -1768,12 +2264,13 @@ const App = {
     let tid = 0;
 
     const pages = {
-      dashboard:   { title: 'Dashboard Housekeeping', comp: 'PageDashboard' },
-      housekeeping:{ title: 'Manajemen Housekeeping', comp: 'PageHousekeeping' },
-      inventory:   { title: 'Inventori',              comp: 'PageInventory' },
-      staff:       { title: 'Staf Housekeeping',      comp: 'PageStaff' },
-      maintenance: { title: 'Predictive Maintenance', comp: 'PageMaintenance' },
-    };
+  dashboard:   { title: 'Dashboard Housekeeping', comp: 'PageDashboard' },
+  housekeeping:{ title: 'Manajemen Housekeeping', comp: 'PageHousekeeping' },
+  inventory:   { title: 'Inventori',              comp: 'PageInventory' },
+  staff:       { title: 'Staf Housekeeping',      comp: 'PageStaff' },
+  maintenance: { title: 'Predictive Maintenance', comp: 'PageMaintenance' },
+  lostfound:   { title: 'Lost & Found',           comp: 'PageLostFound'}
+};
 
     const pageTitle = computed(() => pages[page.value]?.title || 'Dashboard');
     const pageComp  = computed(() => pages[page.value]?.comp  || 'PageDashboard');
